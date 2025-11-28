@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>БДСМ-рулетка</title>
+<style>
+  :root{
+    --wheel-size: min(80vmin, 360px);
+    --thumb-size: calc(var(--wheel-size) * 0.16);
+    --center-size: calc(var(--wheel-size) * 0.22);
+    --duration-max: 15000;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:flex-start;
+    gap:16px;
+    padding:16px;
+    background: linear-gradient(180deg,#07070f,#0a0a15);
+    color:#fff;
+    font-family: 'Inter', sans-serif;
+  }
+  .col{ width:360px; max-width:90vw; }
+  h1{ margin:0 0 8px 0; font-size:1.5rem; font-weight:700; color:#6cf; text-shadow:0 0 6px #6cf,0 0 12px #6cf; }
+  h2{ margin:12px 0 6px 0; font-size:1.2rem; color:#6cf; text-shadow:0 0 4px #6cf; }
+  label{ display:block; font-size:0.9rem; margin:6px 0 4px; color:#6cf; text-shadow:0 0 3px #6cf; }
+  input[type="text"]{ width:100%; padding:10px; border-radius:8px; border:1px solid #6cf; background:#020218; color:#6cf; box-shadow: 0 0 6px #6cf inset; }
+  button{ -webkit-tap-highlight-color: transparent; cursor:pointer; border:0; padding:10px 16px; border-radius:12px; background:linear-gradient(180deg,#6cf,#28a); color:#000; font-weight:700; text-shadow:0 0 2px #6cf; box-shadow:0 0 8px #6cf, 0 4px 8px rgba(0,150,255,0.3);}
+  button[disabled]{opacity:0.5; cursor:default; filter:grayscale(.3);}
+  .status{font-size:0.85rem;color:#6cf; margin-top:6px; text-shadow:0 0 2px #6cf;}
+  .wrap{ width:var(--wheel-size); height:var(--wheel-size); position:relative; display:flex; align-items:center; justify-content:center; border-radius:50%; background: radial-gradient(circle at center,#000011 0%,#00000a 100%); box-shadow:0 0 12px #6cf inset;}
+  .wheel{ width:100%; height:100%; border-radius:50%; position:relative; display:flex; align-items:center; justify-content:center;
+    background: conic-gradient(
+        #90caf9 0deg 72deg,
+        #a5d6a7 72deg 144deg,
+        #ffe082 144deg 216deg,
+        #f48fb1 216deg 288deg,
+        #ce93d8 288deg 360deg
+      );
+    box-shadow:0 0 12px #90caf9 inset;
+    transform-origin:center;
+    will-change: transform;
+  }
+  .pointer{ position:absolute; top:-10%; left:50%; transform:translateX(-50%); width:0;height:0; border-left:14px solid transparent; border-right:14px solid transparent; border-bottom:24px solid #6cf; z-index:40; filter:drop-shadow(0 0 4px #6cf);}
+  .thumb{ position:absolute; width:var(--thumb-size); height:var(--thumb-size); border-radius:50%; overflow:hidden; display:flex; align-items:center; justify-content:center; z-index:35; border:2px solid #6cf; background: rgba(0,255,255,0.15); backdrop-filter: blur(2px); visibility:hidden; box-shadow:0 0 8px #6cf;}
+  .thumb img{ width:100%; height:100%; object-fit:cover; transform: rotate(calc(-1 * var(--wheel-rot, 0deg))); display:block; border-radius:50%; box-shadow:0 0 4px #6cf;}
+  .t1{ left:50%; top:7%; transform:translate(-50%,-50%) rotate(90deg) }
+  .t2{ right:6%; top:30%; transform:translate(0,-50%) rotate(18deg) }
+  .t3{ right:14%; bottom:14%; transform:translate(0,0) rotate(-54deg) }
+  .t4{ left:14%; bottom:14%; transform:translate(0,0) rotate(-126deg) }
+  .t5{ left:6%; top:30%; transform:translate(-50%,-50%) rotate(-198deg) }
+
+  .winner-overlay{ position:fixed; left:50%; top:50%; transform:translate(-50%, -50%) scale(0); z-index:999; transition: transform 0.6s cubic-bezier(0.25,1,0.5,1); border-radius:12px; overflow:hidden; pointer-events:none; text-align:center; background:#000; padding:12px; color:#6cf; font-size:1rem; text-shadow:0 0 6px #6cf; box-shadow:0 0 12px #6cf;}
+  .winner-overlay.show{ transform:translate(-50%, -50%) scale(1); }
+
+  #prizesTable{ width:100%; border-collapse:collapse; margin-top:12px;}
+  #prizesTable th, #prizesTable td{ border:1px solid #6cf; padding:6px 8px; text-align:center; color:#fff; font-size:0.9rem;}
+  #prizesTable th{ background: rgba(108, 204, 255,0.2);}
+  #prizesTable td img{ width:40px; height:40px; border-radius:4px; object-fit:cover;}
+  @media(max-width: 480px){ body{padding:12px;} .col{width:100%;} .wrap{width:90vw; height:90vw;} .thumb{width:14vw; height:14vw;} .winner-overlay img{width:140px;} #prizesTable td img{width:30px; height:30px;} }
+</style>
+</head>
+<body>
+
+<div class="col controls">
+  <h1>БДСМ-рулетка</h1>
+  <label>Никнейм (обязательно):</label>
+  <input id="nickname" type="text" placeholder="Свою кличку сюда напиши, шавка!">
+  <div style="display:flex; gap:8px; margin-top:10px;">
+    <button id="spinBtn">Получить бдсм-шмот</button>
+    <button id="clearBtn" style="background:#ee5566; color:#fff;">Очистить историю</button>
+  </div>
+  <div class="status" id="status">Чтобы пошалить, введи своё имя и нажми синюю кнопку кнопку сверху ↑↑↑</div>
+  <div class="winners">
+    <table id="winTable">
+      <thead><tr><th>Ник</th><th>Выигрыш</th><th>Когда</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="pointer"></div>
+  <div id="wheel" class="wheel" role="img" aria-label="Колесо рулетки">
+    <div class="thumb t1"><img id="thumb1" alt="img1"></div>
+    <div class="thumb t2"><img id="thumb2" alt="img2"></div>
+    <div class="thumb t3"><img id="thumb3" alt="img3"></div>
+    <div class="thumb t4"><img id="thumb4" alt="img4"></div>
+    <div class="thumb t5"><img id="thumb5" alt="img5"></div>
+  </div>
+</div>
+
+<div class="col prizes">
+  <h2>Все призы</h2>
+  <table id="prizesTable">
+    <thead><tr><th>Приз</th><th>Картинка</th></tr></thead>
+    <tbody></tbody>
+  </table>
+</div>
+
+<div id="winnerOverlay" class="winner-overlay"></div>
+
+<script>
+const spinBtn = document.getElementById('spinBtn');
+const clearBtn = document.getElementById('clearBtn');
+const nickname = document.getElementById('nickname');
+const status = document.getElementById('status');
+const wheel = document.getElementById('wheel');
+const thumbs = [document.getElementById('thumb1'),document.getElementById('thumb2'),document.getElementById('thumb3'),document.getElementById('thumb4'),document.getElementById('thumb5')];
+const winTbody = document.querySelector('#winTable tbody');
+const overlay = document.getElementById('winnerOverlay');
+
+const AUDIO_NAME = './0001186.mp3';
+const IMG_NAMES = ['./img1.jpg','./img2.jpg','./img3.jpg','./img4.jpg','./img5.jpg'];
+const PRIZE_NAMES = ['Наручники','Верёвка','Ошейник','Плётка','Кляп'];
+const WIN_TEXT = [
+  '— вас прикуют в подвале наручниками к батарее и заставят пить ебучее жёлтое рево 24/7',
+  '— вас будут связывать и унижать',
+  '— вы становитесь ручной шавкой',
+  '— вас жёстко отшлёпают',
+  '— вам заткнули рот, хватит на сегодня бухать'
+];
+
+const SECTORS = 5;
+const MAX_MS = 15000;
+let audio = new Audio(); audio.preload='auto'; audio.src=AUDIO_NAME;
+let audioDuration = MAX_MS/1000;
+let currentRotation = 0;
+
+audio.addEventListener('loadedmetadata', ()=>{ audioDuration = Math.min(audio.duration||(MAX_MS/1000),MAX_MS/1000); });
+
+function tryLoadImages(){
+  IMG_NAMES.forEach((path,i)=>{
+    const img=new Image();
+    img.onload=()=>{ thumbs[i].querySelector('img').src=path; thumbs[i].style.visibility='visible'; };
+    img.onerror=()=>{ thumbs[i].style.visibility='hidden'; };
+    img.src=path;
+  });
+}
+tryLoadImages();
+
+function loadWinners(){
+  const list=JSON.parse(localStorage.getItem('wheelWinners')||'[]');
+  winTbody.innerHTML='';
+  list.forEach(row=>{
+    const tr=document.createElement('tr');
+    const time=new Date(row.time).toLocaleString();
+    tr.innerHTML=`<td>${row.nick}</td><td>${row.prize}</td><td style="white-space:nowrap">${time}</td>`;
+    winTbody.appendChild(tr);
+  });
+}
+
+function saveWinner(nick, prize){
+  const list=JSON.parse(localStorage.getItem('wheelWinners')||'[]');
+  list.unshift({nick,prize,time:Date.now()});
+  localStorage.setItem('wheelWinners',JSON.stringify(list.slice(0,200)));
+  loadWinners();
+}
+
+function clearWinners(){
+  localStorage.removeItem('wheelWinners'); 
+  loadWinners(); 
+}
+
+let spinning=false;
+
+function doSpin(){
+  if(spinning) return;
+  const nick = nickname.value.trim();
+  if(!nick){ 
+    status.textContent='Введи кличку, шавка!'; 
+    nickname.focus(); 
+    return; 
+  }
+  spinning=true; spinBtn.disabled=true;
+
+  const durSec=Math.min(audioDuration||MAX_MS/1000,MAX_MS/1000);
+  const targetIndex=Math.floor(Math.random()*SECTORS);
+  const sectorAngle=360/SECTORS;
+  const offset=360-(targetIndex*sectorAngle+sectorAngle/2);
+  const minFull=5;
+  const fullSpins=Math.max(minFull, Math.floor(1.5*durSec)); 
+  const totalDegrees=fullSpins*360+offset;
+  const ms=Math.round(durSec*1000);
+  const start=performance.now();
+
+  function rafFrame(now){
+    const t = Math.min(1,(now-start)/ms);
+    // Плавное замедление: easeOutQuart
+    const ease = 1 - Math.pow(1 - t, 4);
+    const cur = currentRotation + (totalDegrees - currentRotation) * ease;
+    document.querySelectorAll('.thumb img').forEach(img => img.style.setProperty('--wheel-rot', cur+'deg'));
+    wheel.style.transform = `rotate(${cur}deg)`;
+    if(t < 1) requestAnimationFrame(rafFrame);
+    else{
+      currentRotation = totalDegrees % 360;
+      finalizeSpin(targetIndex, nick);
+    }
+  }
+
+  requestAnimationFrame(rafFrame);
+
+  try{ audio.currentTime=0; audio.play().catch(()=>{});}catch(e){}
+  setTimeout(()=>{ try{audio.pause();}catch(e){} }, ms+80);
+  status.textContent='Кручусь...';
+}
+
+function finalizeSpin(index,nick){
+  spinning=false; spinBtn.disabled=false;
+  const prizeName=PRIZE_NAMES[index];
+  status.textContent=`Остановлено на ${prizeName}.`;
+  saveWinner(nick,prizeName);
+  showWinnerOverlay(index);
+}
+
+function showWinnerOverlay(index){
+  overlay.innerHTML=`<img src="${IMG_NAMES[index]}" style="width:200px; border-radius:8px; margin-bottom:10px"><div>${PRIZE_NAMES[index]}<br>${WIN_TEXT[index]}</div>`;
+  overlay.classList.add('show'); 
+  setTimeout(()=>{ overlay.classList.remove('show'); },4000);
+}
+
+spinBtn.addEventListener('click',doSpin);
+clearBtn.addEventListener('click',()=>{ clearWinners(); status.textContent='История очищена.'; });
+nickname.addEventListener('keydown',e=>{ if(e.key==='Enter') doSpin(); });
+
+function loadPrizesTable(){
+  const tbody=document.querySelector('#prizesTable tbody'); 
+  tbody.innerHTML='';
+  IMG_NAMES.forEach((img,i)=>{ 
+    const tr=document.createElement('tr'); 
+    tr.innerHTML=`<td>${PRIZE_NAMES[i]}</td><td><img src="${img}" alt="img${i+1}"></td>`; 
+    tbody.appendChild(tr); 
+  });
+}
+loadPrizesTable();
+loadWinners();
+</script>
+</body>
+</html>
